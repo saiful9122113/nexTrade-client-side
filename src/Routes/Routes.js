@@ -1,7 +1,7 @@
-import {createBrowserRouter} from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import Main from "../Layout/Main";
 import AddProduct from "../Pages/DashBoard/AddProduct/AddProduct";
-import AllSeller from "../Pages/DashBoard/AllSeller/AllSeller"
+import AllSeller from "../Pages/DashBoard/AllSeller/AllSeller";
 import Blogs from "../Pages/Blog/Blog";
 import ErrorPage from "../Pages/ErrorPage/ErrorPage";
 import Home from "../Pages/Home/Home/Home";
@@ -17,6 +17,9 @@ import ProductDetails from "../Pages/product/details";
 import PurchasePage from "../Pages/payment/purchase";
 import axios from "axios";
 import SearchProduct from "../Pages/SearchProduct/SearchProduct";
+import SuccessPage from "../Pages/payment/SuccessPage";
+import FailPage from "../Pages/payment/FailPage";
+import CancelPage from "../Pages/payment/CancelPage";
 
 const router = createBrowserRouter([
   {
@@ -38,14 +41,26 @@ const router = createBrowserRouter([
       {
         path: "/blogs",
         element: <Blogs />,
+      }, 
+      {
+        path: "/success",
+        element: <SuccessPage />,
+      },
+      {
+        path: "/fail",
+        element: <FailPage />,
+      },
+      {
+        path: "/cancel",
+        element: <CancelPage />,
       },
       {
         path: "/products/:name",
         element: <SearchProduct />,
         loader: async ({ params }) => {
-          const { name } = params; 
+          const { name } = params;
           const { data } = await axios.get(`http://localhost:5000/search-product/${name}`);
-          return data; 
+          return data;
         },
       },
       {
@@ -72,16 +87,20 @@ const router = createBrowserRouter([
           </PrivateRoute>
         ),
         loader: async ({ params }) => {
-          const { productId } = params; 
+          const { productId } = params;
           const { data } = await axios.get(`http://localhost:5000/single-product/${productId}`);
-          return data; 
+          return data;
         },
       },
     ],
   },
   {
     path: "/dashboard",
-    element: <PrivateRoute><DashboardLayout /></PrivateRoute>,
+    element: (
+      <PrivateRoute>
+        <DashboardLayout />
+      </PrivateRoute>
+    ),
     children: [
       {
         path: "/dashboard/addproduct",
@@ -112,5 +131,3 @@ const router = createBrowserRouter([
 ]);
 
 export default router;
-
-  

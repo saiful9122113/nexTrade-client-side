@@ -8,8 +8,9 @@ const CategoryWiseDataFetch = () => {
   const { id } = useParams(); // Dynamically get the category ID from the URL
   const [categoryData, setCategoryData] = useState([]);
   const [product, setProduct] = useState(null);
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
 
-  console.log(categoryData)
+  console.log("Fetched Data: ", categoryData);
 
   // Map category IDs to category names
   const categoryNames = [
@@ -36,17 +37,33 @@ const CategoryWiseDataFetch = () => {
   useEffect(() => {
     if (!categoryName || categoryName === "Unknown Category") return;
 
-    // Fetch data for the selected category
-    fetch(`http://localhost:5000/product/${categoryName}`, {
-      method: "GET",
-      headers: {
-        "content-type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setCategoryData(data))
-      .catch((err) => console.error("Error fetching category data:", err));
-  }, [id, categoryName]);
+    // Fetch data for the selected category with optional price filters
+    const fetchCategoryData = async () => {
+      try {
+        const fetchUrl = new URL(`http://localhost:5000/product/${categoryName}`);
+        if (priceRange.min) fetchUrl.searchParams.append("minPrice", priceRange.min);
+        if (priceRange.max) fetchUrl.searchParams.append("maxPrice", priceRange.max);
+
+        const res = await fetch(fetchUrl, {
+          method: "GET",
+          headers: {
+            "content-type": "application/json",
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setCategoryData(data);
+        } else {
+          console.error("Failed to fetch category data.");
+        }
+      } catch (err) {
+        console.error("Error fetching category data:", err);
+      }
+    };
+
+    fetchCategoryData();
+  }, [id, categoryName, priceRange]);
 
   const imageArray = categoryData.map((product) => product.ProductImg);
 
@@ -63,31 +80,41 @@ const CategoryWiseDataFetch = () => {
             <option>Price: High to low</option>
           </select>
 
-          <h3 className="font-bold text-lg mb-4">Filter Ads By</h3>
+          {/* Price Range Filter */}
+          <h3 className="font-bold text-lg mb-4">Filter by Price Range</h3>
           <div className="mb-6">
-            <label className="block mb-2">
-              <input type="checkbox" className="mr-2" /> Urgent
-            </label>
-            <label>
-              <input type="checkbox" className="mr-2" /> Featured
-            </label>
+            <label className="block mb-2">Min Price</label>
+            <input
+              type="number"
+              className="border rounded p-2 w-full mb-4"
+              value={priceRange.min}
+              onChange={(e) =>
+                setPriceRange({ ...priceRange, min: e.target.value })
+              }
+            />
+            <label className="block mb-2">Max Price</label>
+            <input
+              type="number"
+              className="border rounded p-2 w-full mb-4"
+              value={priceRange.max}
+              onChange={(e) =>
+                setPriceRange({ ...priceRange, max: e.target.value })
+              }
+            />
+            <button
+              className="bg-blue-500 text-white rounded p-2 w-full"
+              onClick={() => setCategoryData([])} // Clear UI before fetching
+            >
+              Apply Filter
+            </button>
           </div>
-
-          <h3 className="font-bold text-lg mb-4">Type of Poster</h3>
-          <select className="border rounded p-2 w-full mb-6">
-            <option>All</option>
-            <option>Member</option>
-            <option>Verified Seller</option>
-          </select>
         </div>
 
         {/* Main Content Section */}
         <div className="flex flex-col items-center w-full">
           {/* Page Header */}
           <div>
-            <h1 className="text-3xl font-bold text-center mb-6">
-              {categoryName}
-            </h1>
+            <h1 className="text-3xl font-bold text-center mb-6">{categoryName}</h1>
           </div>
 
           {/* Image Carousel Section */}
@@ -99,14 +126,15 @@ const CategoryWiseDataFetch = () => {
 
           {/* Category Data */}
           <div className="flex flex-col gap-4 mx-auto mt-6 px-4 max-w-4xl">
-            {categoryData.length && categoryData.map((product) => (
-              <CategoryDataCard
-                key={product._id}
-                productId={product._id}
-                product={product}
-                setProduct={setProduct}
-              />
-            ))}
+            {categoryData.length > 0 &&
+              categoryData.map((product) => (
+                <CategoryDataCard
+                  key={product._id}
+                  productId={product._id}
+                  product={product}
+                  setProduct={setProduct}
+                />
+              ))}
           </div>
 
           {/* Booking Modal */}
